@@ -17,7 +17,19 @@
 
 ### Output :
 
+#### Training example distribution visualisation : 
+
+---
+
 ![](images/training.png)
+
+
+---
+
+
+#### Classify any tweets : 
+
+---
 
 ![](images/output.png)
 
