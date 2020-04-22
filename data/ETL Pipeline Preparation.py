@@ -181,8 +181,9 @@ df['related'] = df['related'].replace({2:0})
 # In[20]:
 
 
-engine = create_engine('sqlite:///InsertDatabaseName.db')
-df.to_sql('InsertTableName', engine, index=False,if_exists='replace')
+engine = create_engine('sqlite:///DisasterResponse.db')
+df.to_sql('DisasterResponse', engine, index=False,if_exists='replace')
+
 
 
 # ### 8. Use this notebook to complete `etl_pipeline.py`

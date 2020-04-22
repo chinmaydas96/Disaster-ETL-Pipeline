@@ -1,24 +1,84 @@
 import sys
 
+import joblib
+import nltk
+import pandas as pd
+from sqlalchemy import create_engine
+import string
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
+import numpy as np
+
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+import re
+
+stop_words = set(stopwords.words('english'))
+porter = PorterStemmer()
+
 
 def load_data(database_filepath):
-    pass
+    engine = create_engine('sqlite:///' + database_filepath )
+    df = pd.read_sql(database_filepath.split('/')[-1][:-3], engine)
+    X = df['message']
+    y = df.iloc[:,4:]
+    categories_name = y.columns.tolist()
+
+    return X,y, categories_name
 
 
 def tokenize(text):
-    pass
+    text = text.lower()
+    result = re.sub(r'\d+', '', text)
+    tokens = word_tokenize(result)
+    rm_pun= [word for word in tokens if word.isalnum()]
+    tokens = [w for w in rm_pun if not w in stop_words]
+    clean_tokens = [porter.stem(t) for t in tokens]
+    return clean_tokens
 
 
 def build_model():
-    pass
+
+    clf = RandomForestClassifier()
+    pipeline = Pipeline([
+                    ('tfidf', TfidfVectorizer(tokenizer=tokenize)),
+                    ('clf', MultiOutputClassifier(clf))
+                        ])
+
+    param_grid = {
+    'tfidf__ngram_range': ((1, 1), (1, 2)),
+    'tfidf__max_df': [0.8, 1.0],
+    'tfidf__max_features': [None, 10000],
+    'clf__estimator__n_estimators': [50, 100],
+    'clf__estimator__min_samples_split': [2, 4]
+    }
+
+    cv = GridSearchCV(pipeline, param_grid, cv=3, verbose=10, n_jobs=-1)
+
+    return cv
+
+
+    
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+
+    Y_pred = model.predict(X_test)
+
+    # Print out the full classification report
+    print(classification_report(Y_test, Y_pred, target_names=category_names))
 
 
 def save_model(model, model_filepath):
-    pass
+    joblib.dump(model, model_filepath)
 
 
 def main():
