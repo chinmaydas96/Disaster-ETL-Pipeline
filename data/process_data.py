@@ -8,11 +8,36 @@ warnings.filterwarnings("ignore")
 
 
 def load_data(messages_filepath, categories_filepath):
+    """loads the specified message and category data
+    Args:
+        messages_filepath (string): The file path of the messages csv
+        categories_filepath (string): The file path of the categories cv
+    Returns:
+        df (pandas dataframe): The combined messages and categories df
+    """
     messages = pd.read_csv(messages_filepath)
     categories_n = pd.read_csv(categories_filepath)
     df = pd.merge(messages,categories_n,how='inner',on='id')
-    categories = categories_n['categories'].str.split(';',expand=True)
+
+    return df   
+
+
+def clean_data(df):
+    """Cleans the data:
+        - drops duplicates
+        - removes messages missing classes
+        - cleans up the categories column
+    Args:
+        df (pandas dataframe): combined categories and messages df
+    Returns:
+        df (pandas dataframe): Cleaned dataframe with split categories
+    """
+
+    # expand the catagories columns
+    categories = df['categories'].str.split(';',expand=True)
     row = categories.iloc[[0]]
+
+    # get all the categories name
     category_colnames = [i[:-2] for i in row.values.tolist()[0]]
     categories.columns = category_colnames
 
@@ -22,16 +47,14 @@ def load_data(messages_filepath, categories_filepath):
         # convert column from string to numeric
         categories[column] = categories[column].astype(int)
 
-
+    # drop original category column
     df.drop(['categories'],axis=1,inplace=True)
+
+    # add individual category columns
     df = pd.concat([df,categories],axis=1)
     df.dropna(subset=category_colnames, inplace=True)
     
-    
-    return df   
-
-
-def clean_data(df):
+    # remove duplicate and clean it
     df = df.drop_duplicates(subset='message')
     df['related'].replace({2:0},inplace=True)
     return df
@@ -39,6 +62,7 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    ## create the sqlite engine and save the dataset
     engine = create_engine('sqlite:///' + database_filename)
     df.to_sql('DisasterResponse', engine, index=False,if_exists='replace')  
 

@@ -11,8 +11,7 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer
 import numpy as np
 
 import nltk
@@ -26,6 +25,15 @@ porter = PorterStemmer()
 
 
 def load_data(database_filepath):
+    """Loads X and Y and gets category names
+    Args:
+        database_filepath (str): string filepath of the sqlite database
+    Returns:
+        X (pandas dataframe): Feature data, just the messages
+        Y (pandas dataframe): Classification labels
+        category_names (list): List of the category names for classification
+    """
+
     engine = create_engine('sqlite:///' + database_filepath )
     df = pd.read_sql(database_filepath.split('/')[-1][:-3], engine)
     X = df['message']
@@ -36,6 +44,12 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+     """Basic tokenizer that do lower case, removes punctuation, numbers and stopwords then lemmatizes
+    Args:
+        text (string): input message to tokenize
+    Returns:
+        tokens (list): list of cleaned tokens in the message
+    """
     text = text.lower()
     result = re.sub(r'\d+', '', text)
     tokens = word_tokenize(result)
@@ -47,12 +61,21 @@ def tokenize(text):
 
 def build_model():
 
+    """Returns the GridSearchCV object to be used as the model
+    Args:
+        None
+    Returns:
+        cv (scikit-learn GridSearchCV): Grid search model object
+    """
+
     clf = RandomForestClassifier()
     pipeline = Pipeline([
                     ('tfidf', TfidfVectorizer(tokenizer=tokenize)),
                     ('clf', MultiOutputClassifier(clf))
                         ])
 
+    
+    # Different parameters to try on
     param_grid = {
     'tfidf__ngram_range': ((1, 1), (1, 2)),
     'tfidf__max_df': [0.8, 1.0],
@@ -62,14 +85,20 @@ def build_model():
     }
 
     cv = GridSearchCV(pipeline, param_grid, cv=3, verbose=10, n_jobs=-1)
-
     return cv
 
 
-    
-
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """Prints multi-output classification results
+    Args:
+        model (pandas dataframe): the scikit-learn fitted model
+        X_text (pandas dataframe): The X test set
+        Y_test (pandas dataframe): the Y test classifications
+        category_names (list): the category names
+    Returns:
+        None
+    """
 
     Y_pred = model.predict(X_test)
 
@@ -78,6 +107,13 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """dumps the model to the given filepath
+    Args:
+        model (scikit-learn model): The fitted model
+        model_filepath (string): the filepath to save the model to
+    Returns:
+        None
+    """
     joblib.dump(model, model_filepath)
 
 
