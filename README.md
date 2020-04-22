@@ -17,6 +17,7 @@
 
 ### Output :
 
-![])(images/training.png)
-![])(images/output.png)
+![](images/training.png)
+
+![](images/output.png)
 
