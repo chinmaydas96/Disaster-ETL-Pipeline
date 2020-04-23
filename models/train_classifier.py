@@ -53,12 +53,25 @@ def tokenize(text):
     Returns:
         tokens (list): list of cleaned tokens in the message
     """
+    
+    # making text to lower case
     text = text.lower()
+    
+    # remove numeric characters
     result = re.sub(r'\d+', '', text)
+
+    # tokenize the text
     tokens = word_tokenize(result)
+
+    # Remove punctuations
     rm_pun= [word for word in tokens if word.isalnum()]
+
+    ## Remove stop words
     tokens = [w for w in rm_pun if not w in stop_words]
+
+    # Stemming the text
     clean_tokens = [porter.stem(t) for t in tokens]
+    
     return clean_tokens
 
 
