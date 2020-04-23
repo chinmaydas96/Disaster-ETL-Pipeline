@@ -6,12 +6,12 @@ import pandas as pd
 from sqlalchemy import create_engine
 import string
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer,TfidfTransformer
 import numpy as np
 
 import nltk
@@ -19,6 +19,9 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 import re
+
+import warnings
+warnings.filterwarnings("ignore")
 
 stop_words = set(stopwords.words('english'))
 porter = PorterStemmer()
@@ -44,7 +47,7 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
-     """Basic tokenizer that do lower case, removes punctuation, numbers and stopwords then lemmatizes
+    """Basic tokenizer that do lower case, removes punctuation, numbers and stopwords then lemmatizes
     Args:
         text (string): input message to tokenize
     Returns:
@@ -68,24 +71,13 @@ def build_model():
         cv (scikit-learn GridSearchCV): Grid search model object
     """
 
-    clf = RandomForestClassifier()
+    clf = AdaBoostClassifier()
     pipeline = Pipeline([
                     ('tfidf', TfidfVectorizer(tokenizer=tokenize)),
                     ('clf', MultiOutputClassifier(clf))
                         ])
 
-    
-    # Different parameters to try on
-    param_grid = {
-    'tfidf__ngram_range': ((1, 1), (1, 2)),
-    'tfidf__max_df': [0.8, 1.0],
-    'tfidf__max_features': [None, 10000],
-    'clf__estimator__n_estimators': [50, 100],
-    'clf__estimator__min_samples_split': [2, 4]
-    }
-
-    cv = GridSearchCV(pipeline, param_grid, cv=3, verbose=10, n_jobs=-1)
-    return cv
+    return pipeline
 
 
 
